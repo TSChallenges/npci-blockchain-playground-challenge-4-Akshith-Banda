@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/hyperledger/fabric-gateway/pkg/client"
 	"github.com/hyperledger/fabric-gateway/pkg/identity"
@@ -21,8 +22,8 @@ const (
 	keyPath       = cryptoPath + "/users/User1@org1.example.com/msp/keystore/"
 	tlsCertPath   = cryptoPath + "/peers/peer0.org1.example.com/tls/ca.crt"
 	peerEndpoint  = "localhost:7051"
-	channelName   = "mychannel"
-	chaincodeName = "basic"
+	channelName   = "assetchannel"
+	chaincodeName = "assetcc"
 )
 
 func main() {
@@ -58,14 +59,41 @@ func main() {
 	contract := network.GetContract(chaincodeName)
 
 	// Submit transaction
-	result, err := contract.SubmitTransaction("CreateAsset", "asset1", "blue", "5", "Tom", "100")
+	result,commit, err := contract.SubmitAsync("CreateUser",client.WithArguments("investor135", "50000"))
 	if err != nil {
 		log.Fatalf("Failed to submit transaction: %v", err)
 	}
+	// Wait for commit
+	if _, err := commit.Status(); err != nil {
+		log.Fatalf("Transaction commit failed: %v", err)
+	}
 	fmt.Printf("Transaction committed. Result: %s\n", string(result))
 
+	// // register asset
+	// result,commit, err = contract.SubmitAsync("RegisterAsset",client.WithArguments("isin123", "Apple", "class-A", "100","50", "20", "5", "7"))
+	// if err != nil {
+	// 	log.Fatalf("Failed to register asset: %v", err)
+	// }
+	// // Wait for commit
+	// if _, err := commit.Status(); err != nil {
+	// 	log.Fatalf("register asset commit failed: %v", err)
+	// }
+	// fmt.Printf("registerd asset. Result: %s\n", string(result))
+
+	// subscribe asset
+	result,commit, err = contract.SubmitAsync("SubscribeAsset",client.WithArguments("isin123", "10", "investor135", time.Now().String()))
+	if err != nil {
+		log.Fatalf("Failed to subscribe asset: %v", err)
+	}
+	// Wait for commit
+	if _, err := commit.Status(); err != nil {
+		log.Fatalf("subscribe asset commit failed: %v", err)
+	}
+	fmt.Printf("subscribed asset. Result: %s\n", string(result))
+	
+
 	// Evaluate transaction
-	result, err = contract.EvaluateTransaction("ReadAsset", "asset1")
+	result, err = contract.EvaluateTransaction("GetPortfolio", "investor135")
 	if err != nil {
 		log.Fatalf("Failed to evaluate transaction: %v", err)
 	}

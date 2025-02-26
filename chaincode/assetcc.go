@@ -125,6 +125,7 @@ func (a *AssetManagementContract) SubscribeAsset(
 	isin string,
 	unitsNeeded int,
 	investorID string,
+	subscribedTimeStamp string,
 ) error {
 	investorBytes, err := ctx.GetStub().GetState(investorID)
 	if err != nil {
@@ -184,11 +185,10 @@ func (a *AssetManagementContract) SubscribeAsset(
 		investor.Holdings = make(map[string]Holding)
 	}
 
-	subscribedTS := time.Now().String()
 	investor.Holdings[isin] = Holding{
 		ISIN:                isin,
 		Units:               unitsNeeded,
-		SubscribedTimeStamp: time.Now().String(),
+		SubscribedTimeStamp: subscribedTimeStamp,
 	}
 	investor.Balance -= priceForRequestedUnits
 
@@ -208,7 +208,7 @@ func (a *AssetManagementContract) SubscribeAsset(
 		ISIN:       isin,
 		InvestorID: investorID,
 		Units:      unitsNeeded,
-		Timestamp:  subscribedTS,
+		Timestamp:  subscribedTimeStamp,
 	}
 	assetSubscribedJSON, err := json.Marshal(assetSubscribed)
 	if err != nil {
